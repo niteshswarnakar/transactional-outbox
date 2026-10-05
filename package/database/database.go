@@ -45,6 +45,7 @@ func InitPostgresDB() *Database {
 
 	db.AutoMigrate(&models.KafkaOrder{})
 	db.AutoMigrate(&models.Order{})
+	db.AutoMigrate(&models.Outbox{})
 	return &Database{
 		DB: db,
 	}

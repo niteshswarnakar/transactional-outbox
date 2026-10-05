@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/jinzhu/gorm"
@@ -26,7 +27,7 @@ func MicroServer() {
 		"bootstrap.servers":  brokers,
 		"group.id":           group,
 		"auto.offset.reset":  "earliest",
-		"enable.auto.commit": true,
+		"enable.auto.commit": false,
 	})
 	if err != nil {
 		log.Fatalf("failed to create consumer: %v", err)
@@ -57,26 +58,38 @@ func MicroServer() {
 				log.Printf("consumer error: %v", err)
 				continue
 			}
-			handleMessage(msg, db)
+			for {
+				err := handleMessage(msg, db)
+				if err == nil {
+					break
+				}
+				log.Printf("failed to handle message, retrying: %v", err)
+				time.Sleep(time.Second)
+			}
+			if _, err := consumer.CommitMessage(msg); err != nil {
+				log.Printf("failed to commit offset: %v", err)
+			}
 		}
 	}
 }
 
-func handleMessage(msg *kafka.Message, db *gorm.DB) {
+func handleMessage(msg *kafka.Message, db *gorm.DB) error {
 	var order models.KafkaOrder
 	if err := json.Unmarshal(msg.Value, &order); err != nil {
-		log.Printf("failed to unmarshal message: %v", err)
-		return
+		log.Printf("skipping unparseable message at %v: %v", msg.TopicPartition, err)
+		return nil
 	}
 
-	if err := db.Create(&order).Error; err != nil {
-		log.Printf("failed to insert order: %v", err)
-		return
+	err := db.Set("gorm:insert_option", "ON CONFLICT (id) DO NOTHING").Create(&order).Error
+	if err != nil {
+		return fmt.Errorf("insert order %d: %w", order.ID, err)
 	}
 
 	fmt.Printf("consumed order: id=%d name=%s price=%.2f\n", order.ID, order.Name, order.Price)
+	return nil
 }
 
+// since it is microservice, it will have its own database connection and will not share the same connection with gateway service
 func initDB() *gorm.DB {
 	host := os.Getenv("DB_HOST")
 	if host == "" {

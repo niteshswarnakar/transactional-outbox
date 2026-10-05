@@ -12,7 +12,7 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=1 go build -o /app/gateway ./gateway
+RUN CGO_ENABLED=1 go build -tags dynamic -o /app/gateway ./gateway
 
 FROM debian:bookworm-slim
 
