@@ -9,6 +9,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"github.com/niteshswarnakar/transactional-outbox/microservice"
 	"github.com/niteshswarnakar/transactional-outbox/package/database"
 	broker "github.com/niteshswarnakar/transactional-outbox/package/kafka"
@@ -38,6 +39,8 @@ func main() {
 	defer cancel()
 	go outbox.NewWorkerThread(db.DB, kc, time.Second).Run(ctx)
 
+	e.Use(middleware.CORS())
+
 	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(200, map[string]string{"status": "healthy"})
 	})
@@ -45,7 +48,33 @@ func main() {
 	e.POST("/orders", func(c echo.Context) error {
 		return Handler(c, db)
 	})
+
+	// Orders written by the gateway.
+	e.GET("/orders", func(c echo.Context) error {
+		return listOrders(c, db)
+	})
+
+	// Orders stored by the Kafka consumer.
+	e.GET("/kafka-orders", func(c echo.Context) error {
+		return listKafkaOrders(c, db)
+	})
 	e.Logger.Fatal(e.Start(":8080"))
+}
+
+func listOrders(c echo.Context, db *database.Database) error {
+	orders := []models.Order{}
+	if err := db.DB.Order("id").Find(&orders).Error; err != nil {
+		return c.JSON(500, map[string]string{"error": err.Error()})
+	}
+	return c.JSON(200, orders)
+}
+
+func listKafkaOrders(c echo.Context, db *database.Database) error {
+	orders := []models.KafkaOrder{}
+	if err := db.DB.Order("id").Find(&orders).Error; err != nil {
+		return c.JSON(500, map[string]string{"error": err.Error()})
+	}
+	return c.JSON(200, orders)
 }
 
 func Handler(c echo.Context, db *database.Database) error {

@@ -43,9 +43,9 @@ func InitPostgresDB() *Database {
 		panic(err)
 	}
 
-	db.AutoMigrate(&models.KafkaOrder{})
-	db.AutoMigrate(&models.Order{})
-	db.AutoMigrate(&models.Outbox{})
+	if err := db.AutoMigrate(&models.KafkaOrder{}, &models.Order{}, &models.Outbox{}).Error; err != nil {
+		panic(err)
+	}
 	return &Database{
 		DB: db,
 	}

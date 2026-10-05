@@ -7,6 +7,7 @@ require github.com/labstack/echo/v4 v4.15.4
 require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/lib/pq v1.1.1 // indirect
+	golang.org/x/time v0.15.0 // indirect
 )
 
 require (
