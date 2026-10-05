@@ -36,11 +36,11 @@ func main() {
 		log.Fatalf("failed to init kafka producer: %v", err)
 	}
 	defer kc.Close()
-
-	go microservice.MicroServer()
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	go microservice.MicroServer(ctx)
+
 	go outbox.NewWorkerThread(db.DB, kc, time.Second).Run(ctx)
 
 	e.Use(middleware.CORS())
@@ -67,6 +67,7 @@ func main() {
 	e.StaticFS("/", echo.MustSubFS(webFS, "web"))
 
 	e.Logger.Fatal(e.Start(":8080"))
+
 }
 
 func listOrders(c echo.Context, db *database.Database) error {

@@ -1,12 +1,11 @@
 package microservice
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
@@ -15,10 +14,10 @@ import (
 	"github.com/niteshswarnakar/transactional-outbox/package/models"
 )
 
-func MicroServer() {
+func MicroServer(ctx context.Context) {
 	brokers := os.Getenv("KAFKA_BROKERS")
 	if brokers == "" {
-		brokers = "localhost:9092"
+		brokers = "localhost:29092"
 	}
 	topic := "order-service"
 	group := "microservice-group"
@@ -41,15 +40,12 @@ func MicroServer() {
 		log.Fatalf("failed to subscribe to topic: %v", err)
 	}
 
-	sigchan := make(chan os.Signal, 1)
-	signal.Notify(sigchan, syscall.SIGINT, syscall.SIGTERM)
-
 	fmt.Println("Microservice started, consuming from topic:", topic)
 
 	run := true
 	for run {
 		select {
-		case sig := <-sigchan:
+		case sig := <-ctx.Done():
 			fmt.Printf("Caught signal %v: terminating\n", sig)
 			run = false
 		default:
