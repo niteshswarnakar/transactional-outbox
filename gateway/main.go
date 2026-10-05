@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"embed"
 	"encoding/json"
 	"log"
 	"os"
@@ -16,6 +17,9 @@ import (
 	"github.com/niteshswarnakar/transactional-outbox/package/models"
 	"github.com/niteshswarnakar/transactional-outbox/package/outbox"
 )
+
+//go:embed web
+var webFS embed.FS
 
 const orderTopic = "order-service"
 
@@ -58,6 +62,10 @@ func main() {
 	e.GET("/kafka-orders", func(c echo.Context) error {
 		return listKafkaOrders(c, db)
 	})
+
+	// Frontend UI, embedded in the binary and served at /.
+	e.StaticFS("/", echo.MustSubFS(webFS, "web"))
+
 	e.Logger.Fatal(e.Start(":8080"))
 }
 

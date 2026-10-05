@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Transactional Outbox</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Transactional Outbox</h1>
+      <p class="sub">
+        Orders written by the gateway vs. orders delivered through Kafka
+      </p>
+    </header>
+
+    <main>
+      <section class="card">
+        <h2>Create order</h2>
+        <form id="order-form">
+          <label
+            >Name
+            <input
+              id="name"
+              name="name"
+              required
+              placeholder="book"
+              autocomplete="off" />
+          </label>
+          <label
+            >Price
+            <input
+              id="price"
+              name="price"
+              type="number"
+              step="0.01"
+              min="0"
+              required
+              placeholder="12.50" />
+          </label>
+          <button type="submit">Create</button>
+        </form>
+        <p id="form-msg" class="msg" role="status"></p>
+      </section>
+
+      <section class="status">
+        <span id="sync" class="pill">Loading…</span>
+        <span id="updated" class="muted"></span>
+      </section>
+
+      <div class="columns">
+        <section class="card">
+          <h2>
+            Orders <span class="muted">gateway DB</span>
+            <span id="count-orders" class="count">0</span>
+          </h2>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th class="num">Price</th>
+                <th>Kafka</th>
+              </tr>
+            </thead>
+            <tbody id="orders"></tbody>
+          </table>
+        </section>
+
+        <section class="card">
+          <h2>
+            Kafka orders <span class="muted">consumer DB</span>
+            <span id="count-kafka" class="count">0</span>
+          </h2>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th class="num">Price</th>
+              </tr>
+            </thead>
+            <tbody id="kafka-orders"></tbody>
+          </table>
+        </section>
+      </div>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
